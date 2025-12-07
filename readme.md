@@ -1,1 +1,2 @@
-Initialized by Azure Data Factory!
+# datafactory_etl
+sandbox repo for adf pipelines
