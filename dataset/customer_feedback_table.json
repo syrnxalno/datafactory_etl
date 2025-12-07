@@ -1,0 +1,17 @@
+{
+	"name": "customer_feedback_table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "[dbo]",
+			"table": "[cust_feedback_transformed]"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

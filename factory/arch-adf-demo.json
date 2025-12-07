@@ -1,0 +1,9 @@
+{
+	"name": "arch-adf-demo",
+	"location": "eastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "b52efb2f-9d0f-4beb-bc69-1d17eb028086",
+		"tenantId": "f8e5ee17-1080-482b-87e2-fa6b0fcf9dfc"
+	}
+}

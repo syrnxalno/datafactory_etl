@@ -1,0 +1,62 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "customer_feedback",
+						"type": "DatasetReference"
+					},
+					"name": "source"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "customer_feedback_table",
+						"type": "DatasetReference"
+					},
+					"name": "sink",
+					"description": "writing the transformed data to a new table"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1",
+					"description": "normalizing feedback from customers"
+				},
+				{
+					"name": "derivedColumn2",
+					"description": "classifying based on sentiments"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          FeedbackID as string,",
+				"          CustomerName as string,",
+				"          Rating as string,",
+				"          Comment as string,",
+				"          SubmittedOn as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source",
+				"source derive(cleanComment = trim(lower(Comment))) ~> derivedColumn1",
+				"derivedColumn1 derive(sentiment = iif(toInteger(Rating) >= 4, 'Positive', iif(toInteger(Rating) == 3, 'Neutral', 'Negative'))) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink"
+			]
+		}
+	}
+}
