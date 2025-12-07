@@ -1,0 +1,215 @@
+{
+	"name": "csv_to_sql_adfDemo",
+	"properties": {
+		"description": "Sample data pipeline that ingests data from a csv file and outputs it to an sql sink\n--------------------------------------------\ncomponents :\n1. storage account\n2. linked services\n3. adf\n4. azure sql instance\n5. datasets to reference data sources",
+		"activities": [
+			{
+				"name": "Copy Data from CSV File",
+				"description": "Copy data from sales_data.csv and put it to an sql table sink",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "sale_id",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "sale_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "sale_date",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "sale_date",
+									"type": "Date",
+									"physicalType": "date"
+								}
+							},
+							{
+								"source": {
+									"name": "product",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "product",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "price",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "price",
+									"type": "Decimal",
+									"physicalType": "decimal",
+									"scale": 2,
+									"precision": 10
+								}
+							},
+							{
+								"source": {
+									"name": "quantity",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "quantity",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "region",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "region",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "sales_data",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "sales_table",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Stored procedure to Delete Duplicate Data",
+				"description": "Incase of redundant loads of the same data, this activity deletes the duplicates",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy Data from CSV File",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[usp_RemoveDuplicates]"
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Script to transform table",
+				"description": "Adding an additional column to the current table with certain calculations",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "Stored procedure to Delete Duplicate Data",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "NonQuery",
+							"text": {
+								"value": "TRUNCATE TABLE @{pipeline().parameters.destinationTable}; \n\nINSERT INTO @{pipeline().parameters.destinationTable} (sale_id, sale_date, product, price, quantity, region, total_sales) \nSELECT sale_id,\n       sale_date,\n       product,\n       price,\n       quantity,\n       region,\n       price * quantity AS total_sales\nFROM @{pipeline().parameters.sourceTable}; ",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"sourceTable": {
+				"type": "string",
+				"defaultValue": "[dbo].[sales_demo]"
+			},
+			"destinationTable": {
+				"type": "string",
+				"defaultValue": "[dbo].[sales_demo_transformed]"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-10-25T16:16:39Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

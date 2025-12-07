@@ -1,0 +1,46 @@
+{
+	"name": "sales_table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "sale_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "sale_date",
+				"type": "date"
+			},
+			{
+				"name": "product",
+				"type": "nvarchar"
+			},
+			{
+				"name": "price",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "quantity",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "region",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "sales_demo"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
